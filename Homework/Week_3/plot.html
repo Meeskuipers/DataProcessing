@@ -1,0 +1,159 @@
+<!-- // Mees Kuipers
+// 11288477
+//
+// This program will make a graph of a json file. This file was made in
+// convertcsv3json.py. -->
+
+
+<!DOCTYPE html>
+
+<html>
+    <head>
+      <title>HTML page</title>
+      <style type="text/css">
+          canvas {
+              border: 1px solid black;
+              background: #FFE4C4;
+          }
+          body {
+            margin: 0;
+          }
+      </style>
+    </head>
+    <body>
+        <canvas id="Canvas">
+        </canvas>
+        <script>
+            var canvas = document.getElementById("Canvas");
+            var c = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            var fileName = "data.json";
+            var check = 0;
+            var txtFile = new XMLHttpRequest();
+            txtFile.onreadystatechange = function() {
+                if (txtFile.readyState === 4 && txtFile.status == 200) {
+                    var information = JSON.parse(txtFile.responseText);
+                    var information_json = Object.keys(information);
+
+                    // Transform the information to the coordinates of the canvas
+                    var x_as = createTransform([1,20] ,[canvas.width*0.05, canvas.width*0.9]);
+                    var y_as = createTransform([0,75],[canvas.height*0.9, canvas.height*0.03]);
+
+                    // Call all the functions that made the axis manualy
+                    drawAsses();
+                    drawText(c, "day of the month", canvas.height*0.5, canvas.height*0.97)
+                    drawHead(c, "Duur van de neerslag (in 0.1 uur)", canvas.height*0.35, canvas.height*0.05)
+
+                    // loops over all the information
+                    information_json.forEach(function(element) {
+                        var duur = information[element]["Duur van de neerslag (in 0.1 uur)"];
+                        var datum = information[element]["Datum (YYYY=jaar MM=maand DD=dag)"];
+                        var y_cor = duur;
+
+                        // if the date is above 9 the last two number are used
+                        if (parseInt(String(datum).slice(6,7)) != 0){
+                            var x_cor = parseInt(String(datum).slice(6,8));
+                        }
+                        else {
+                            var x_cor = parseInt(String(datum).slice(7,8));
+                        }
+                        x_coordinate = x_as(x_cor);
+                        y_coordinate = y_as(y_cor);
+                        vierkant(c, x_coordinate, y_coordinate, "#5F9EA0");
+                        if (check === 0){
+                            move(c, x_coordinate, y_coordinate);
+                        }
+                        c.lineTo(x_coordinate, y_coordinate);
+                        check = 1;
+                    });
+                    c.stroke();
+                }
+
+            }
+            txtFile.open("GET", "information.json");
+            txtFile.send();
+
+            function move(c, x_coordinate, y_coordinate){
+              c.beginPath();
+              c.moveTo(x_coordinate, y_coordinate);
+            }
+
+            // Draw the axis manualy
+            function drawAsses(){
+                drawLine(c, canvas.width*0.05, canvas.height*0.03, canvas.width*0.05, canvas.height*0.9); //y-as
+                drawLine(c, canvas.width*0.05, canvas.height*0.9, canvas.width*0.9, canvas.height*0.9); //x-as
+                for (i = 0; i < 20; i++) {
+                    drawLine(c, ((canvas.width*0.9-canvas.width*0.05)/19)*i+canvas.width*0.05, canvas.height*0.92, ((canvas.width*0.9-canvas.width*0.05)/19)*i+canvas.width*0.05, canvas.height*0.9) //x-as strepen
+                    }
+
+                for (i = 1; i < 16; i++) {
+                    drawLine(c, canvas.width*0.05, ((canvas.height*0.9-canvas.height*0.03)/15)*i+canvas.height*0.03, canvas.width*0.9, ((canvas.height*0.9-canvas.height*0.03)/15)*i+canvas.height*0.03) //y-as strepen
+                    }
+
+                for (i = 0; i < 20; i++) {
+                    drawText(c, i+1, ((canvas.width*0.9-canvas.width*0.05)/19)*i+canvas.width*0.05, canvas.height*0.94);
+                    }
+
+                for (i = 0; i < 16; i++) {
+                    drawText(c, 75-5*i, canvas.width*0.02, ((canvas.height*0.9-canvas.height*0.03)/15)*i+canvas.height*0.03);
+                    }
+                }
+
+
+            function drawLine(ctx, startX, startY, endX, endY){
+                ctx.save();
+                //ctx.strokeStyle = color;
+                ctx.beginPath();
+                ctx.moveTo(startX,startY);
+                ctx.lineTo(endX,endY);
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            // For the explanation of the axis this was used
+            function drawText(ctx, text, x, y){
+                ctx.save();
+                ctx.font = '18px serif';
+                ctx.fillText(text, x, y);
+                ctx.restore();
+            }
+
+            function drawHead(ctx, text, x, y){
+                ctx.save();
+                ctx.font = '30px serif';
+                ctx.fillText(text, x, y);
+                ctx.restore();
+            }
+
+            function createTransform(domain, range){
+              	// domain is a two-element array of the data bounds [domain_min, domain_max]
+              	// range is a two-element array of the screen bounds [range_min, range_max]
+              	// this gives you two equations to solve:
+              	// range_min = alpha * domain_min + beta
+              	// range_max = alpha * domain_max + beta
+               		// a solution would be:
+
+                  var domain_min = domain[0]
+                  var domain_max = domain[1]
+                  var range_min = range[0]
+                  var range_max = range[1]
+
+                  // formulas to calculate the alpha and the beta
+                 	var alpha = (range_max - range_min) / (domain_max - domain_min)
+                  var beta = range_max - alpha * domain_max
+
+                  // returns the function for the linear transformation (y= a * x + b)
+                  return function(x){
+                    return alpha * x + beta;
+                  }
+              }
+            // Draw small sqaures
+            function vierkant(ctx, x, y, color){
+                ctx.fillStyle=color;
+                ctx.fillRect(x, y, 4, 4);
+            }
+        </script>
+    </body>
+</html>
